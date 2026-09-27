@@ -1,2 +1,0 @@
-installation:
-1.install pymupdf
