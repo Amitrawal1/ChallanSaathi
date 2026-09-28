@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from typing import Literal
 
 import faiss
 import numpy as np
@@ -13,10 +14,12 @@ from .chunking import Chunk
 from .config import Settings
 from .index import SearchIndex, embed
 from .sources import CENTRAL
-from .text import tokenize
+from .text import expand_query, parse_references, tokenize
 
 # Long provisions are split into many sub-chunks; cap how many go to the LLM per provision.
 MAX_PARTS_PER_RESULT = 3
+
+Mode = Literal["hybrid", "vector", "bm25"]
 
 
 @dataclass
@@ -28,6 +31,7 @@ class SearchResult:
     vector_rank: int | None
     bm25_rank: int | None
     parts: list[Chunk] = field(default_factory=list)
+    similarity: float | None = None  # cosine similarity to the query, if vector-retrieved
 
     @property
     def text(self) -> str:
@@ -60,13 +64,32 @@ class HybridRetriever:
             return None
         return np.flatnonzero(np.isin(self._states, [state, CENTRAL]))
 
-    def _vector_ranking(self, query: str, allowed: np.ndarray | None, k: int) -> list[int]:
+    def _vector_ranking(
+        self, query: str, allowed: np.ndarray | None, k: int
+    ) -> tuple[list[int], list[float]]:
+        """Chunk ids by cosine similarity to the query, with their similarities."""
         query_vector = embed(self.embedder, [query])
         params = None
         if allowed is not None:
             params = faiss.SearchParameters(sel=faiss.IDSelectorBatch(allowed.astype("int64")))
-        _, ids = self.vectors.search(query_vector, k, params=params)
-        return [int(i) for i in ids[0] if i != -1]
+        similarities, ids = self.vectors.search(query_vector, k, params=params)
+        pairs = [
+            (int(i), float(sim)) for i, sim in zip(ids[0], similarities[0], strict=False) if i != -1
+        ]
+        return [i for i, _ in pairs], [sim for _, sim in pairs]
+
+    def _reference_ranking(self, query: str, allowed: np.ndarray | None) -> list[int]:
+        """Chunks whose Section/Rule number the query names explicitly ("Section 129")."""
+        references = set(parse_references(query))
+        if not references:
+            return []
+        allowed_set = None if allowed is None else set(allowed.tolist())
+        return [
+            i
+            for i, chunk in enumerate(self.chunks)
+            if (chunk.unit, chunk.number) in references
+            and (allowed_set is None or i in allowed_set)
+        ]
 
     def _bm25_ranking(self, query: str, allowed: np.ndarray | None, k: int) -> list[int]:
         tokens = tokenize(query)
@@ -81,18 +104,46 @@ class HybridRetriever:
         return [int(i) for i in top if scores[i] > 0]
 
     def search(
-        self, query: str, state: str | None = None, top_k: int | None = None
+        self,
+        query: str,
+        state: str | None = None,
+        top_k: int | None = None,
+        mode: Mode = "hybrid",
     ) -> list[SearchResult]:
+        """Return up to ``top_k`` distinct provisions for ``query``.
+
+        ``mode`` selects hybrid fusion or a single retriever (used by the evaluation).
+        Returns an empty list when the best vector similarity is below
+        ``settings.min_similarity``, i.e. the question is not about motor vehicle law.
+        """
         s = self.settings
         top_k = top_k or s.top_k
         allowed = self._allowed_ids(state)
-        vector_ids = self._vector_ranking(query, allowed, s.candidates_per_retriever)
-        bm25_ids = self._bm25_ranking(query, allowed, s.candidates_per_retriever)
-        fused = reciprocal_rank_fusion(
-            [vector_ids, bm25_ids], [s.vector_weight, s.bm25_weight], k=s.rrf_k
+        reference_ids = self._reference_ranking(query, allowed)
+        expanded = expand_query(query)
+        vector_query = expanded if s.query_expansion == "all" else query
+        vector_ids, similarities = self._vector_ranking(
+            vector_query, allowed, s.candidates_per_retriever
         )
+        if not reference_ids and (not similarities or similarities[0] < s.min_similarity):
+            return []
+        bm25_query = expanded if s.query_expansion in ("bm25", "all") else query
+        bm25_ids = self._bm25_ranking(bm25_query, allowed, s.candidates_per_retriever)
+
+        if mode == "vector":
+            fused = reciprocal_rank_fusion([vector_ids], [1.0], k=s.rrf_k)
+        elif mode == "bm25":
+            fused = reciprocal_rank_fusion([bm25_ids], [1.0], k=s.rrf_k)
+        else:
+            # An explicitly named provision outranks anything found by similarity.
+            fused = reciprocal_rank_fusion(
+                [reference_ids, vector_ids, bm25_ids],
+                [s.reference_weight, s.vector_weight, s.bm25_weight],
+                k=s.rrf_k,
+            )
         vector_rank = {i: r for r, i in enumerate(vector_ids, start=1)}
         bm25_rank = {i: r for r, i in enumerate(bm25_ids, start=1)}
+        similarity = dict(zip(vector_ids, similarities, strict=False))
 
         # Group sub-chunks of the same provision so each result is a distinct Section/Rule.
         grouped: dict[tuple[str, str | None, int], SearchResult] = {}
@@ -105,7 +156,9 @@ class HybridRetriever:
                 continue
             if len(grouped) == top_k:
                 continue
-            grouped[key] = SearchResult(chunk, score, vector_rank.get(i), bm25_rank.get(i), [chunk])
+            grouped[key] = SearchResult(
+                chunk, score, vector_rank.get(i), bm25_rank.get(i), [chunk], similarity.get(i)
+            )
         for result in grouped.values():
             result.parts.sort(key=lambda c: c.part)
         return list(grouped.values())

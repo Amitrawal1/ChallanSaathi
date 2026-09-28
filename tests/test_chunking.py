@@ -1,4 +1,4 @@
-from challansaathi.chunking import chunk_document, find_headings
+from challansaathi.chunking import chunk_document, find_headings, split_text
 from challansaathi.ingest import LoadedDocument, PageSpan
 
 ACT_TEXT = """THE MOTOR VEHICLES ACT, 1988
@@ -44,7 +44,8 @@ def test_chunk_document_metadata():
     chunks = chunk_document(_document("MOTOR_VEHICLES.pdf", ACT_TEXT))
     by_number = {c.number: c for c in chunks}
 
-    assert by_number[None].label == "Preamble"
+    # The title page / table of contents before the first provision is not indexed.
+    assert None not in by_number
     section_3 = by_number["3"]
     assert section_3.unit == "Section"
     assert section_3.title == "Motor Vehicles Act, 1988"
@@ -54,6 +55,38 @@ def test_chunk_document_metadata():
     assert section_3.citation == "Motor Vehicles Act, 1988, Section 3 (p. 2)"
     assert by_number["1"].chapter == "CHAPTER I"
     assert by_number["1"].page_start == 1
+
+
+def test_false_heading_does_not_hide_following_rules():
+    # A cross-reference that looks like rule "32" must not swallow the real rules 25-27.
+    text = (
+        "23. Alpha.— text. 24. Beta.— see clause 32. Explanation.— more text. "
+        "25. Gamma.— text. 26. Delta.— text. 27. Epsilon.— text."
+    )
+    text = " ".join(f"{n}. Rule {n}.— body." for n in range(1, 23)) + " " + text
+    numbers = [h.number for h in find_headings(text)]
+    assert numbers[-5:] == ["23", "24", "25", "26", "27"]
+    assert "32" not in numbers
+
+
+def test_sub_rule_is_not_a_heading():
+    text = "1. First rule.— (1) text. 2. Second rule.— body (3) In considering.— x. 3. Third.— y."
+    assert [h.number for h in find_headings(text)] == ["1", "2", "3"]
+
+
+def test_schedules_and_forms_are_split_from_last_rule():
+    text = (
+        "1. Short title.— These rules may be called the test rules and apply everywhere.\n"
+        "2. Power to give directions.— The State Government may issue such directions.\n"
+        "1[FIRST SCHEDULE\n[See Rule 41(6)]\nLetters allowed to the Registering Authority A B C\n"
+        "FORM SR-2\n[See Rule 12(a)]\nTransport Vehicle Driver's Badge details and signature\n"
+    )
+    chunks = chunk_document(_document("UP.pdf", text))
+    labels = [c.label for c in chunks]
+    assert labels == ["Rule 1", "Rule 2", "First Schedule", "Form SR-2"]
+    assert "SCHEDULE" not in chunks[1].text
+    assert chunks[3].heading == "Form SR-2: Transport Vehicle Driver's Badge details and signature"
+    assert chunks[3].citation.startswith("Uttar Pradesh Motor Vehicles Rules, 1998, Form SR-2 (")
 
 
 def test_long_provision_is_split_with_context():
@@ -66,3 +99,18 @@ def test_long_provision_is_split_with_context():
     assert all(c.total_parts == len(chunks) for c in chunks)
     assert all(c.embedding_text().startswith("Haryana Motor Vehicles Rules") for c in chunks)
     assert all("Rule 9: Long rule" in c.embedding_text() for c in chunks)
+
+
+def test_split_text_respects_size_and_overlaps():
+    lines = [f"({i}) Sub-rule {i} says vehicles must comply with clause {i}." for i in range(60)]
+    text = "\n".join(lines)
+    pieces = split_text(text, chunk_size=300, chunk_overlap=80)
+    assert len(pieces) > 1
+    assert all(len(p) <= 300 for p in pieces)
+    # Consecutive pieces share text, and no sub-rule is lost.
+    assert all(a.splitlines()[-1] in b for a, b in zip(pieces, pieces[1:], strict=False))
+    assert all(f"({i}) Sub-rule {i} " in "".join(pieces) for i in range(60))
+
+
+def test_split_text_hard_splits_unbroken_text():
+    assert split_text("x" * 25, chunk_size=10, chunk_overlap=0) == ["x" * 10, "x" * 10, "x" * 5]

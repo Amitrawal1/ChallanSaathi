@@ -16,7 +16,11 @@ def _print_sources(results) -> None:
     for i, r in enumerate(results, start=1):
         c = r.chunk
         print(f"[{i}] {c.citation}" + (f" — {c.heading}" if c.heading else ""))
-        print(f"    score={r.score:.4f} vector_rank={r.vector_rank} bm25_rank={r.bm25_rank}")
+        similarity = "-" if r.similarity is None else f"{r.similarity:.3f}"
+        print(
+            f"    score={r.score:.4f} vector_rank={r.vector_rank} bm25_rank={r.bm25_rank} "
+            f"cosine={similarity}"
+        )
 
 
 def main(argv: list[str] | None = None) -> int:

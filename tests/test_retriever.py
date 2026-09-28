@@ -23,7 +23,9 @@ def retriever(chunks, embedder):
     vectors = embed(embedder, [c.embedding_text() for c in chunks])
     index = faiss.IndexFlatIP(vectors.shape[1])
     index.add(vectors)
-    return HybridRetriever(SearchIndex(chunks, index, {}), embedder, Settings(top_k=3))
+    return HybridRetriever(
+        SearchIndex(chunks, index, {}), embedder, Settings(top_k=3, min_similarity=0.0)
+    )
 
 
 def test_state_filter_keeps_state_and_central_law(retriever):
@@ -44,6 +46,28 @@ def test_parts_of_one_provision_are_grouped(retriever):
     assert len(helmet) == 1
     assert [p.part for p in helmet[0].parts] == [1, 2]
     assert "BIS standards" in helmet[0].text
+
+
+def test_mode_selects_single_retriever(retriever):
+    vector_only = retriever.search("helmet", mode="vector")
+    bm25_only = retriever.search("helmet", mode="bm25")
+    assert all(r.vector_rank is not None for r in vector_only)
+    assert all(r.bm25_rank is not None for r in bm25_only)
+    assert bm25_only[0].chunk.number == "129"
+
+
+def test_out_of_scope_question_returns_nothing(retriever):
+    retriever.settings = Settings(min_similarity=0.4)
+    assert retriever.search("chocolate cake recipe") == []
+    assert retriever.search("protective headgear helmet motor cycle") != []
+
+
+def test_explicit_section_reference_ranks_first(retriever):
+    results = retriever.search("What does Rule 185 say?")
+    assert results[0].chunk.number == "185"
+    # A named provision is returned even when the words match nothing else.
+    retriever.settings = Settings(min_similarity=0.99)
+    assert retriever.search("rule 129")[0].chunk.number == "129"
 
 
 def test_prompt_numbers_sources(retriever):

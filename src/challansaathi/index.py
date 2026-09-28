@@ -24,7 +24,11 @@ MANIFEST_FILE = "manifest.json"
 
 
 class IndexNotFoundError(FileNotFoundError):
-    pass
+    """No index has been built yet."""
+
+
+class StaleIndexError(ValueError):
+    """The index no longer matches the configured embedding model or the source PDFs."""
 
 
 @dataclass
@@ -56,6 +60,7 @@ def _fingerprint(data_dir: Path) -> dict[str, str]:
 
 
 def build_index(settings: Settings, embedder=None) -> SearchIndex:
+    """Parse every PDF, chunk it, embed the chunks and save the index to ``settings.index_dir``."""
     documents = load_all(settings.data_dir)
     chunks: list[Chunk] = []
     for doc in documents:
@@ -91,6 +96,7 @@ def save_index(search_index: SearchIndex, index_dir: Path) -> None:
 
 
 def load_index(settings: Settings) -> SearchIndex:
+    """Load a saved index, refusing one that is missing or out of date."""
     index_dir = settings.index_dir
     if not (index_dir / MANIFEST_FILE).exists():
         raise IndexNotFoundError(
@@ -98,16 +104,26 @@ def load_index(settings: Settings) -> SearchIndex:
         )
     manifest = json.loads((index_dir / MANIFEST_FILE).read_text())
     if manifest["embedding_model"] != settings.embedding_model:
-        raise ValueError(
+        raise StaleIndexError(
             f"Index was built with {manifest['embedding_model']!r} but settings use "
             f"{settings.embedding_model!r}. Rebuild with: challansaathi build-index"
         )
     if settings.data_dir.exists() and manifest["sources"] != _fingerprint(settings.data_dir):
-        logger.warning(
-            "PDFs in %s changed since the index was built; rebuild it.", settings.data_dir
+        raise StaleIndexError(
+            f"PDFs in {settings.data_dir} changed since the index was built. "
+            "Rebuild with: challansaathi build-index"
         )
 
     with open(index_dir / CHUNKS_FILE, encoding="utf-8") as f:
         chunks = [Chunk(**json.loads(line)) for line in f]
     vectors = faiss.read_index(str(index_dir / FAISS_FILE))
     return SearchIndex(chunks, vectors, manifest)
+
+
+def load_or_build_index(settings: Settings, embedder=None) -> SearchIndex:
+    """Load the saved index; build it only when it is missing or stale."""
+    try:
+        return load_index(settings)
+    except (IndexNotFoundError, StaleIndexError) as exc:
+        logger.warning("%s Building a new index now.", exc)
+        return build_index(settings, embedder)

@@ -1,0 +1,48 @@
+{"id": 1, "question": "What is the penalty for drunk driving?", "relevant": [["MOTOR_VEHICLES.pdf", "185"]]}
+{"id": 2, "question": "daru pee ke gaadi chalane par kya saza hai?", "relevant": [["MOTOR_VEHICLES.pdf", "185"]]}
+{"id": 3, "question": "Is wearing a helmet compulsory for two-wheeler riders?", "relevant": [["MOTOR_VEHICLES.pdf", "129"]]}
+{"id": 4, "question": "Are Sikhs wearing a turban exempt from wearing a helmet?", "relevant": [["MOTOR_VEHICLES.pdf", "129"]]}
+{"id": 5, "question": "What is the minimum age to drive a motor vehicle in India?", "relevant": [["MOTOR_VEHICLES.pdf", "4"]]}
+{"id": 6, "question": "Can I drive without a driving licence?", "relevant": [["MOTOR_VEHICLES.pdf", "3"], ["MOTOR_VEHICLES.pdf", "181"]]}
+{"id": 7, "question": "Punishment for overspeeding", "relevant": [["MOTOR_VEHICLES.pdf", "183"]]}
+{"id": 8, "question": "Who sets the maximum speed limit on roads?", "relevant": [["MOTOR_VEHICLES.pdf", "112"]]}
+{"id": 9, "question": "What happens if I drive a vehicle without insurance?", "relevant": [["MOTOR_VEHICLES.pdf", "196"], ["MOTOR_VEHICLES.pdf", "146"]]}
+{"id": 10, "question": "Penalty for driving an unregistered vehicle", "relevant": [["MOTOR_VEHICLES.pdf", "192"]]}
+{"id": 11, "question": "What is the penalty for dangerous driving?", "relevant": [["MOTOR_VEHICLES.pdf", "184"]]}
+{"id": 12, "question": "What must a driver do after an accident in which someone is injured?", "relevant": [["MOTOR_VEHICLES.pdf", "134"]]}
+{"id": 13, "question": "Compensation for hit and run accident victims", "relevant": [["MOTOR_VEHICLES.pdf", "161"], ["MOTOR_VEHICLES.pdf", "163"]]}
+{"id": 14, "question": "How do I transfer ownership of a vehicle after selling it?", "relevant": [["MOTOR_VEHICLES.pdf", "50"], ["CMVR.pdf", "55"], ["HARYANA.pdf", "48"]]}
+{"id": 15, "question": "Owner of the vehicle died, how is ownership transferred to the heir?", "relevant": [["CMVR.pdf", "56"], ["MOTOR_VEHICLES.pdf", "50"]]}
+{"id": 16, "question": "How to renew my driving licence?", "relevant": [["MOTOR_VEHICLES.pdf", "15"], ["CMVR.pdf", "18"]]}
+{"id": 17, "question": "How do I apply for a learner's licence?", "relevant": [["CMVR.pdf", "10"], ["MOTOR_VEHICLES.pdf", "8"]]}
+{"id": 18, "question": "Medical certificate required for driving licence", "relevant": [["CMVR.pdf", "5"]]}
+{"id": 19, "question": "Driving licence kho gaya, duplicate kaise milega?", "relevant": [["CMVR.pdf", "26"]]}
+{"id": 20, "question": "What are the rules for pollution under control certificate and smoke emission?", "relevant": [["CMVR.pdf", "115"], ["CMVR.pdf", "116"]]}
+{"id": 21, "question": "Is a speed governor mandatory for transport vehicles?", "relevant": [["CMVR.pdf", "118"]]}
+{"id": 22, "question": "Rules about use of horns on vehicles", "relevant": [["CMVR.pdf", "119"], ["HARYANA.pdf", "191"], ["HARYANA.pdf", "170"]]}
+{"id": 23, "question": "Rules for transporting hazardous or dangerous goods", "relevant": [["CMVR.pdf", "129"], ["HARYANA.pdf", "169"]]}
+{"id": 24, "question": "How long is a certificate of fitness valid?", "relevant": [["CMVR.pdf", "62"]]}
+{"id": 25, "question": "How do I get a national permit for a truck?", "relevant": [["CMVR.pdf", "86"], ["CMVR.pdf", "90"]]}
+{"id": 26, "question": "What does Section 129 of the Motor Vehicles Act say?", "relevant": [["MOTOR_VEHICLES.pdf", "129"]]}
+{"id": 27, "question": "Explain rule 138 of the Haryana motor vehicle rules", "relevant": [["HARYANA.pdf", "138"]]}
+{"id": 28, "question": "Haryana mein bus ki seating capacity ka rule kya hai?", "relevant": [["HARYANA.pdf", "138"], ["HARYANA.pdf", "63"]]}
+{"id": 29, "question": "In Haryana, what are the duties of a bus conductor?", "relevant": [["HARYANA.pdf", "32"]]}
+{"id": 30, "question": "Haryana taxi meter rules", "relevant": [["HARYANA.pdf", "101"]]}
+{"id": 31, "question": "Can goods carriages carry passengers in Haryana?", "relevant": [["HARYANA.pdf", "93"]]}
+{"id": 32, "question": "Haryana mein driver badge kaise milta hai?", "relevant": [["HARYANA.pdf", "18"]]}
+{"id": 33, "question": "Precautions at an unmanned railway crossing in Haryana", "relevant": [["HARYANA.pdf", "183"], ["MOTOR_VEHICLES.pdf", "131"]]}
+{"id": 34, "question": "Are there special driving rules on hill roads in Haryana?", "relevant": [["HARYANA.pdf", "177"]]}
+{"id": 35, "question": "UP mein transport vehicle ke driver ka badge kaise milta hai?", "relevant": [["UP.pdf", "12"]]}
+{"id": 36, "question": "What uniform must transport vehicle drivers wear in Uttar Pradesh?", "relevant": [["UP.pdf", "14"]]}
+{"id": 37, "question": "UP mein driving licence phat gaya to kya karein?", "relevant": [["UP.pdf", "9"]]}
+{"id": 38, "question": "How to report a stolen vehicle in Uttar Pradesh?", "relevant": [["UP.pdf", "53"]]}
+{"id": 39, "question": "Can children travel in a public service vehicle in UP, and how are they counted?", "relevant": [["UP.pdf", "99"]]}
+{"id": 40, "question": "Uttar Pradesh rules for carriage of corpses in vehicles", "relevant": [["UP.pdf", "100"]]}
+{"id": 41, "question": "bina insurance ke gaadi chalane par kya hoga?", "relevant": [["MOTOR_VEHICLES.pdf", "196"], ["MOTOR_VEHICLES.pdf", "146"]]}
+{"id": 42, "question": "tez raftaar se gaadi chalane ki saza kya hai?", "relevant": [["MOTOR_VEHICLES.pdf", "183"]]}
+{"id": 43, "question": "gaadi chalane ke liye kam se kam umar kitni honi chahiye?", "relevant": [["MOTOR_VEHICLES.pdf", "4"]]}
+{"id": 44, "question": "accident ke baad driver ki kya zimmedari hai?", "relevant": [["MOTOR_VEHICLES.pdf", "134"]]}
+{"id": 45, "question": "Haryana mein conductor ka license kaise banta hai?", "relevant": [["HARYANA.pdf", "22"]]}
+{"id": 46, "question": "Haryana mein horn bajane par koi rok hai kya?", "relevant": [["HARYANA.pdf", "191"], ["HARYANA.pdf", "170"]]}
+{"id": 47, "question": "UP mein gaadi chori ho jaye to kya karna hai?", "relevant": [["UP.pdf", "53"]]}
+{"id": 48, "question": "UP mein conductor ki duty kya hoti hai?", "relevant": [["UP.pdf", "34"]]}

@@ -5,21 +5,28 @@ from __future__ import annotations
 from collections.abc import Iterator, Sequence
 
 from .retriever import SearchResult
+from .sources import CENTRAL, get_source_info
 
 SYSTEM_PROMPT = """You are ChallanSaathi, an assistant that explains Indian motor vehicle law.
 
-Answer ONLY from the numbered legal sources given in the user message.
+You receive numbered LEGAL SOURCES and a QUESTION. Answer ONLY from those sources.
 
 Rules:
-1. Do not use outside legal knowledge and never invent provisions, fines or section numbers.
-2. If the sources do not answer the question, say so plainly and suggest what to look up.
-3. Explain in simple language, in the same language as the question (English, Hindi or Hinglish).
-4. Name the relevant Section or Rule for every legal claim and cite it as [1], [2], ...
-   using only the source numbers provided. Never make up a citation.
-5. If State rules and Central law both apply, say which is which.
-6. Ignore sources that are not relevant to the question.
-7. End with one line: "This is general information, not legal advice."
-"""
+1. Never use outside knowledge. Never invent provisions, fines, amounts or section numbers.
+   If a fact is not written in the sources, do not state it.
+2. If the sources do not answer the question, reply that the loaded documents do not cover it
+   and stop. Do not answer from memory.
+3. Start with the main rule that answers the question, then any exceptions.
+4. After every sentence that states a legal rule, put the source number in square brackets,
+   e.g. "The driver must wear a helmet [2]." Use only the numbers given.
+5. Name the Section or Rule you rely on (e.g. "Section 129 of the Motor Vehicles Act").
+6. Each source is labelled Central law or State law. When you use a State rule, say which
+   State it belongs to; when you use Central law, say it applies across India.
+7. Each source shows "Text as of"; when you state a fine or amount, say it is as per the text
+   of that date and may have been amended since.
+8. Use simple words, in the same language as the question (English, Hindi or Hinglish).
+9. Describe what the law says; do not advise the user what to do in their own case.
+10. Ignore sources that are not relevant. Keep the answer short: at most 8 sentences."""
 
 
 class LLMUnavailableError(RuntimeError):
@@ -31,7 +38,12 @@ def format_sources(results: Sequence[SearchResult]) -> str:
     for i, result in enumerate(results, start=1):
         chunk = result.chunk
         heading = f" — {chunk.heading}" if chunk.heading else ""
-        blocks.append(f"[{i}] {chunk.citation}{heading}\n{result.text}")
+        info = get_source_info(chunk.document)
+        scope = "Central law" if chunk.state == CENTRAL else f"State law: {chunk.state}"
+        blocks.append(
+            f"[{i}] {chunk.citation}{heading}\n"
+            f"({scope}. Text as of: {info.text_as_of})\n{result.text}"
+        )
     return "\n\n".join(blocks)
 
 
